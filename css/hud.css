@@ -1,0 +1,28 @@
+
+body {
+/*    background-color: black;
+    color: white;
+*/    padding: 1em;
+}
+
+#content {
+    list-style-type: none;
+    margin: 0px;
+    padding: 0px;
+}
+
+#content li {
+    display: inline-block;
+}
+
+#hud {
+    width: 20%;
+    vertical-align: top;
+    border: 3px solid black;
+    border-radius: 5px;
+    padding: 1em;
+}
+
+#display_container {
+    width: 77.5%;
+}
