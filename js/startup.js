@@ -15,7 +15,7 @@ function generateMap(display, w, h) {
 
 function getClientHeight() {
     var $document = $(document);
-    return $document.height() - 24;
+    return $document.height() - (6 + 24);
 }
 
 $(document).ready(function(){
@@ -25,13 +25,12 @@ $(document).ready(function(){
     var $container = $('#display_container');
     var $hud = $('#hud');
     var client_height = getClientHeight();
-    $hud.height(client_height - 38);
-    var width = $container.width() / font_width - 5;
+    $hud.height(client_height - 16 * 2);
+    var width = $container.width() / font_width;
     var height = client_height / font_height;
     var display = new ROT.Display({width: width, height: height, fontSize: font_height});
-    $(display).height(font_height * height - 1);
     $container.append(display.getContainer());
-
+    $container.css('max-height', client_height + 'px');
     generateMap(display, width, height);
 
     $('#reset').click(function(){

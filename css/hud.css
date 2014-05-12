@@ -1,14 +1,12 @@
-
 body {
     background-color: black;
     color: white;
 }
 
 #content {
-    list-style-type: none;
-    margin: 0px;
     padding: 0px;
     margin: 12px;
+    list-style-type: none;
 }
 
 #content li {
@@ -16,21 +14,31 @@ body {
 }
 
 #display_container {
-    width: 76.5%;
-    overflow: hidden;
     position: absolute;
+    padding: 0px;
+    margin: 0px;
+    margin-left: 12px;
+    width: 75%;
+    overflow: hidden;
     left: 0px;
-    padding-left: .5em;
+    border: 3px solid white;
+    border-radius: 5px;
+}
+
+#display_container canvas {
+    padding: 0px;
+    margin: 0px;
 }
 
 #hud {
+    position: absolute;
+    right: 1em;
+    padding: 16px;
+    margin: 0px;
     width: 20%;
     vertical-align: top;
     border: 3px solid white;
     border-radius: 5px;
-    padding: 1em;
-    position: absolute;
-    right: 1em;
 }
 
 #hud h1 {
