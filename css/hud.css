@@ -16,7 +16,8 @@ body {
 }
 
 #display_container {
-    width: 77.5%;
+    width: 76.5%;
+    overflow: hidden;
     position: absolute;
     left: 0px;
     padding-left: .5em;

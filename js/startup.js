@@ -1,5 +1,18 @@
+function generateMap(display, w, h) {
+    var noise = new ROT.Noise.Simplex();
+
+    for (var j=0;j<h;j++) {
+        for (var i=0;i<w;i++) {
+            var val = noise.get(i/150, j/120) * 255;
+            var gs = Math.floor((0.5 * val) + 32);
+            var color = "rgb(" + gs + "," + gs + "," + gs +")";
+            display.draw(i, j, "", "", color);
+        }
+    }
+}
+
 $(document).ready(function(){
-    var font_height = 8;
+    var font_height = 4;
     var font_width = getCharacterWidth('m', font_height);
     var $body = $('body');
     var $container = $('#display_container');
@@ -11,18 +24,9 @@ $(document).ready(function(){
     $(display).height(font_height * height - 1);
     $container.append(display.getContainer());
 
-    display.drawText(0, 0, "Hello world!");
+    generateMap(display, width, height);
 
-    /* custom born/survive rules */
-    var map = new ROT.Map.Cellular(width * 3, height * 3, {
-        born: [4, 5, 6, 7, 8],
-        survive: [2, 3, 4, 5]
+    $('#reset').click(function(){
+        generateMap(display, width, height);
     });
-
-    map.randomize(0.9);
-
-    /* generate fifty iterations, show the last one */
-    for (var i=3; i>=0; i--) {
-        map.create(i ? null : display.DEBUG);
-    }
 });
