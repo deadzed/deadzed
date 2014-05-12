@@ -10,23 +10,16 @@ $(document).ready(function(){
 
     display.drawText(0, 0, "Hello world!");
 
-    //ROT.RNG.setSeed(1234);
-    var map = new ROT.Map.Digger(width, height);
-    map.create(display.DEBUG);
+    /* custom born/survive rules */
+    var map = new ROT.Map.Cellular(width * 10, height * 10, {
+        born: [4, 5, 6, 7, 8],
+        survive: [2, 3, 4, 5]
+    });
 
-    var drawDoor = function(x, y) {
-        display.draw(x, y, "", "", "brown");
-    };
+    map.randomize(0.9);
 
-    var rooms = map.getRooms();
-    for (var i=0; i<rooms.length; i++) {
-        var room = rooms[i];
-        console.log("Room #%s: [%s, %s] => [%s, %s]".format(
-            (i+1),
-            room.getLeft(), room.getTop(),
-            room.getRight(), room.getBottom()
-        ));
-
-        room.getDoors(drawDoor);
+    /* generate fifty iterations, show the last one */
+    for (var i=49; i>=0; i--) {
+        map.create(i ? null : display.DEBUG);
     }
 });
