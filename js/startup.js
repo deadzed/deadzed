@@ -1,3 +1,5 @@
+var ZED = {};
+
 function generateMap(display, w, h) {
     var noise = new ROT.Noise.Simplex();
 
@@ -11,15 +13,21 @@ function generateMap(display, w, h) {
     }
 }
 
+function getClientHeight() {
+    var $document = $(document);
+    return $document.height() - 24;
+}
+
 $(document).ready(function(){
     var font_height = 4;
     var font_width = getCharacterWidth('m', font_height);
     var $body = $('body');
     var $container = $('#display_container');
     var $hud = $('#hud');
-    $hud.height($body.height() - 38);
+    var client_height = getClientHeight();
+    $hud.height(client_height - 38);
     var width = $container.width() / font_width - 5;
-    var height = $body.height() / font_height;
+    var height = client_height / font_height;
     var display = new ROT.Display({width: width, height: height, fontSize: font_height});
     $(display).height(font_height * height - 1);
     $container.append(display.getContainer());
