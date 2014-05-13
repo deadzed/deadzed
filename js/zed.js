@@ -3,25 +3,28 @@ var ZED = {
     UI: null,
     Display: null,
     Map: null,
+    Camera: null,
 };
 
 
 
 $(document).ready(function(){
-    ZED.UI = ZedUI({});
+    ZED.UI = ZedUI({fontSize: 16});
     ZED.Display = ZedDisplay({});
     ZED.Map = ZedMap({});
+    ZED.Camera = ZedCamera({});
 
-    var draw_tile = function(x, y, val) {
-        val = val * 255;
-        val = Math.floor((0.5 * val) + 32);
-        var color = "rgb(" + val + "," + val + "," + val +")";
-        ZED.Display.draw(x, y, "", "", color);
+    var state = {
+        map: null,
+        cam: null,
     };
 
-    ZED.Map.generateMap(draw_tile, ZED.Display.width, ZED.Display.height);
-
     var $slider = $('#slider');
+
+    var new_map = function(scale) {
+        state.map = ZED.Map.createSimplex(ZED.Display.width * 4, ZED.Display.height * 4, scale || $slider.slider("value"));
+        state.cam = ZED.Camera.attachCamera(state.map, 0, 0);
+    };
 
     $slider.slider({
         value:1,
@@ -30,12 +33,25 @@ $(document).ready(function(){
         step: 5,
         slide: function( event, ui ) {
             $( "#amount" ).val(ui.value );
-            ZED.Map.generateMap(draw_tile, ZED.Display.width, ZED.Display.height, ui.value);
+            new_map(ui.value);
         }
     });
     $( "#amount" ).val($slider.slider( "value" ));
 
     $('#reset').click(function(){
-        ZED.Map.generateMap(draw_tile, ZED.Display.width, ZED.Display.height, $slider.slider("value"));
+        new_map();
+    });
+
+    new_map();
+
+    $(document).keypress(function(evt) {
+        if (evt.which == 106)
+            state.cam.move(0, 1);
+        else if (evt.which == 107)
+            state.cam.move(0, -1);
+        else if (evt.which == 104)
+            state.cam.move(-1, 0);
+        else if (evt.which == 108)
+            state.cam.move(1, 0);
     });
 });

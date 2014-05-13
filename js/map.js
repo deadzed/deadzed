@@ -1,17 +1,20 @@
 var ZedMap = function(options) {
 
-    var generateMap = function(cb, w, h, scale) {
+    var createSimplex = function(w, h, scale) {
         var noise = new ROT.Noise.Simplex();
-        for (var j=0;j<h;j++) {
-            for (var i=0;i<w;i++) {
-                var val = noise.get(i/(scale || 150), j/(scale || 150));
-                cb(i, j, val);
+        var data = [];
+        for (var y=0;y<h;y++) {
+            for (var x=0;x<w;x++) {
+                data[y * w + x] = noise.get(x/(scale || 150), y/(scale || 150));
             }
         }
+        data.width = w;
+        data.height = h;
+        return data;
     };
 
     var map = {
-        generateMap: generateMap
+        createSimplex: createSimplex
     };
 
     return map;
