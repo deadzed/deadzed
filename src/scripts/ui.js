@@ -1,4 +1,3 @@
-
 var getCharacterWidth = function(c, size) {
     var $shiv = $('<span style="font-family: monospace; margin:0px; padding:0px; font-size: '+ size + 'px;">' + c + '</span>');
     $(document.documentElement).append($shiv);
@@ -16,7 +15,7 @@ var getClientHeight = function() {
 
 ZedUI = function(options) {
 
-    fontSize = options.fontSize || 4;
+    fontSize = options.fontSize || 16;
 
     var ui = {
         fontSize: fontSize,
@@ -33,4 +32,10 @@ ZedUI = function(options) {
     ui.HUD.$element.height(ui.clientHeight - 16 * 2);
 
     return ui;
+};
+
+module.exports = {
+    getCharacterWidth: getCharacterWidth,
+    getClientHeight: getClientHeight,
+    ZedUI: ZedUI
 };

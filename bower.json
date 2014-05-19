@@ -1,0 +1,9 @@
+{
+    "name": "gamestarter",
+    "dependencies": {
+		"phaser-official": "2.0.4",
+        "jquery": "2.1.1",
+        "jquery-ui": "1.10.4",
+        "noisejs": "master"
+    }
+}
