@@ -14,6 +14,7 @@ Preload.prototype = {
         this.load.setPreloadSprite(this.asset);
 
         this.load.image('test', 'images/test.png');
+        this.load.image('tileset', 'images/tileset.png');
     },
 
     create: function() {
