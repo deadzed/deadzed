@@ -29,6 +29,13 @@ gulp.task('scripts', function() {
 	.on('error', $.util.log);
 });
 
+gulp.task('worker', function() {
+	gulp.src('./src/worker/*.js')
+	.pipe($.concat('worker.js'))
+	.pipe(gulp.dest('public'))
+	.on('error', $.util.log);
+});
+
 gulp.task("vendor", function(){
 	$.bowerFiles()
 	.pipe(gulp.dest('public'))
@@ -68,13 +75,14 @@ gulp.task('watch', function() {
 	gulp.watch('src/scripts/**/*', ['scripts']);
 	gulp.watch('src/styles/**/*', ['styles']);
 	gulp.watch('src/assets/**/*', ['assets']);
+	gulp.watch('src/worker/**/*', ['worker']);
 	gulp.watch('public/*', function (e) {
 		gulp.src(e.path)
 		.pipe($.connect.reload());
 	});
 });
 
-gulp.task('build', ['html', 'scripts', 'vendor', 'styles', 'assets']);
+gulp.task('build', ['html', 'scripts', 'worker', 'vendor', 'styles', 'assets']);
 
 gulp.task('nodewebkit', ['build', 'grunt-nodewebkit']);
 
