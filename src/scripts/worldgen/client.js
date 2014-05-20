@@ -69,12 +69,56 @@ WorldGen.prototype = {
             ground_layer.resizeWorld();
             for(var i=0; i<map.length; i++) {
                 var tile = map[i];
-                tilemap.putTile(tile.tile, tile.x, tile.y, ground_layer);
+                this.putTile(tilemap, tile.tile, tile.x, tile.y);
             }
+            tilemap.layers[tilemap.currentLayer].dirty = true;
+            tilemap.calculateFaces(tilemap.currentLayer);
             d.fire(tilemap);
         }, this);
         return d;
+    },
+
+    putTile: function (map, tile, x, y) {
+
+        var layer_idx = map.getLayer(map.currentLayer);
+        var layer = map.layers[layer_idx];
+
+        if (x >= 0 && x < layer.width && y >= 0 && y < layer.height)
+        {
+            var index;
+
+            if (tile instanceof Phaser.Tile)
+            {
+                index = tile.index;
+
+                if (this.hasTile(x, y, layer))
+                {
+                    this.layers[layer].data[y][x].copy(tile);
+                }
+                else
+                {
+                    this.layers[layer].data[y][x] = new Phaser.Tile(layer, index, x, y, tile.width, tile.height);
+                }
+            }
+            else
+            {
+                index = tile;
+
+                if (map.hasTile(x, y, layer_idx))
+                {
+                    layer.data[y][x].index = index;
+                }
+                else
+                {
+                    layer.data[y][x] = new Phaser.Tile(layer, index, x, y, map.tileWidth, map.tileHeight);
+                }
+            }
+
+        }
     }
+
+
+
 };
 
 module.exports = new WorldGen();

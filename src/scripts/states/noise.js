@@ -6,8 +6,8 @@ function NoiseTest(game) {
 
 NoiseTest.prototype = {
     create: function() {
-        var width = 150;
-        var height = 100;
+        var width = 500;
+        var height = 500;
         this.sprite = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, 'test');
         this.sprite.anchor.setTo(0.5, 0.5);
         this.sprite.bringToTop();
