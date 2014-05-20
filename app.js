@@ -17,53 +17,57 @@ Boot.prototype = {
 module.exports = Boot;
 
 },{}],2:[function(require,module,exports){
+var WorldGen = require('../worldgen/client');
 
 function NoiseTest(game) {
-    this.gen = new Noise(Math.random());
+
 }
 
 NoiseTest.prototype = {
     create: function() {
-        var width = 50;
-        var height = 50;
+        var width = 150;
+        var height = 100;
         this.sprite = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, 'test');
         this.sprite.anchor.setTo(0.5, 0.5);
-        this.tilemap = this.game.add.tilemap();
-        this.tilemap.addTilesetImage('ground', 'tileset', 10, 10);
-        this.ground_layer = this.tilemap.create('ground', width, height, 10, 10);
-        this.ground_layer.resizeWorld();
-        for(var x=0; x<width; x++) {
-            for(var y=0; y<height; y++) {
-                tile = Math.floor(Math.random()*4);
-                this.tilemap.putTile(tile, x, y, this.ground_layer);
-            }
-        }
-
         this.sprite.bringToTop();
         this.cursors = this.game.input.keyboard.createCursorKeys();
+        var d = WorldGen.makeMap('ground', width, height, 'tilemap', 10, 10, 7);
+        d.setCallback(function(tilemap) {
+            //this.game.add.existing(tilemap);
+        }, this);
+
+        $('#reset').click(function(){
+            WorldGen.makeMap('ground', width, height, 'tilemap', 10, 10, 7);
+        });
     },
 
     update: function() {
-        if (this.cursors.left.isDown) {
-            this.game.camera.x -= 4;
+        if (this.cursors.left.justPressed()) {
+            this.cursors.left.reset();
+            this.game.camera.x -= 10;
         }
-        else if (this.cursors.right.isDown) {
-            this.game.camera.x += 4;
+        else if (this.cursors.right.justPressed()) {
+            this.cursors.right.reset();
+            this.game.camera.x += 10;
         }
 
-        if (this.cursors.up.isDown) {
-            this.game.camera.y -= 4;
+        if (this.cursors.up.justPressed()) {
+            this.cursors.up.reset();
+            this.game.camera.y -= 10;
         }
-        else if (this.cursors.down.isDown) {
-            this.game.camera.y += 4;
+        else if (this.cursors.down.justPressed()) {
+            this.cursors.down.reset();
+            this.game.camera.y += 10;
         }
     }
 };
 
 module.exports = NoiseTest;
 
-},{}],3:[function(require,module,exports){
+},{"../worldgen/client":5}],3:[function(require,module,exports){
 'use strict';
+
+var WorldGen = require("../worldgen/client");
 
 function Preload() {
     this.asset = null;
@@ -84,6 +88,7 @@ Preload.prototype = {
 
     create: function() {
         this.asset.cropEnabled = false;
+        WorldGen.init(this.game);
     },
 
     update: function() {
@@ -99,7 +104,7 @@ Preload.prototype = {
 
 module.exports = Preload;
 
-},{}],4:[function(require,module,exports){
+},{"../worldgen/client":5}],4:[function(require,module,exports){
 var getCharacterWidth = function(c, size) {
     var $shiv = $('<span style="font-family: monospace; margin:0px; padding:0px; font-size: '+ size + 'px;">' + c + '</span>');
     $(document.documentElement).append($shiv);
@@ -143,6 +148,112 @@ module.exports = {
 };
 
 },{}],5:[function(require,module,exports){
+region = require("./region");
+
+function Deferred() {
+    this.callback = null;
+    this.context = null;
+}
+
+Deferred.prototype = {
+    setCallback: function(cb, ctx) {
+        this.callback = cb;
+        this.context = ctx;
+    },
+    fire: function() {
+        if (this.callback) {
+            this.callback.apply(this.context, arguments);
+        }
+    }
+};
+
+function WorldGen() { }
+
+WorldGen.prototype = {
+
+    init: function(game) {
+        this.game = game;
+        this.maps = {};
+    },
+
+    _callto: (function () {
+
+        var data = {
+            nextID: 1,
+            listeners: {}
+        };
+
+        oParser = new Worker("worker.js");
+
+        oParser.onmessage = function (oEvent) {
+            if (data.listeners[oEvent.data.id]) {
+                var callback = data.listeners[oEvent.data.id];
+                callback.fire(oEvent.data.evaluated);
+            }
+            delete data.listeners[oEvent.data.id];
+        };
+
+        return function () {
+            var d = new Deferred();
+            data.listeners[data.nextID] = d;
+            var args = [];
+            for (var i=1; i<arguments.length; i++) {
+                args.push(arguments[i]);
+            }
+            oParser.postMessage({
+                "id": data.nextID,
+                "message": arguments[0],
+                "args": args
+            });
+            data.nextID += 1;
+            return d;
+        };
+    })(),
+
+    makeMap: function(name, width, height, tilemap, twidth, theight, ntiles) {
+        d = new Deferred();
+        this._callto("generateMap", width, height, ntiles).setCallback(function(map) {
+            var tilemap = new Phaser.Tilemap(this.game, null, twidth, theight, width, height);
+            tilemap.addTilesetImage('ground', 'tileset', 10, 10);
+            ground_layer = tilemap.create(name, width, height, twidth, theight);
+            ground_layer.resizeWorld();
+            for(var i=0; i<map.length; i++) {
+                var tile = map[i];
+                tilemap.putTile(tile.tile, tile.x, tile.y, ground_layer);
+            }
+            d.fire(tilemap);
+        }, this);
+        return d;
+    }
+};
+
+module.exports = new WorldGen();
+
+},{"./region":6}],6:[function(require,module,exports){
+
+var REGION_TYPES = {
+    'wilderness': {
+        icon: 'w'
+    }
+}
+
+function Region(type, x, y, size) {
+    this.type = type || 'wilderness';
+    this.x = x || 0;
+    this.y = y || 0;
+    this.size = size;
+}
+
+Region.prototype ={
+
+};
+
+module.exports = {
+    REGION_TYPES: REGION_TYPES,
+    Region: Region
+};
+
+},{}],7:[function(require,module,exports){
 mUI = require('./ui');
 sBoot = require('./states/boot');
 sPreloader = require('./states/preloader');
@@ -186,4 +297,4 @@ $(document).ready(function(){
 
 });
 
-},{"./states/boot":1,"./states/noise":2,"./states/preloader":3,"./ui":4}]},{},[5])
+},{"./states/boot":1,"./states/noise":2,"./states/preloader":3,"./ui":4}]},{},[7])
