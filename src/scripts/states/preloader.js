@@ -1,7 +1,5 @@
 'use strict';
 
-var WorldGen = require("../worldgen/client");
-
 function Preload() {
     this.asset = null;
     this.ready = false;
@@ -21,7 +19,6 @@ Preload.prototype = {
 
     create: function() {
         this.asset.cropEnabled = false;
-        WorldGen.init(this.game);
     },
 
     update: function() {

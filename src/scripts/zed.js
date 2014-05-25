@@ -9,7 +9,6 @@ var ZED = {
     Game: null
 };
 
-
 $(document).ready(function(){
     ZED.UI = mUI.ZedUI({fontSize: 16});
 

@@ -1,44 +1,36 @@
-var WorldGen = require('../worldgen/client');
+var World = require('../services/world/world');
+var Renderer = require('../renderer');
 
-function NoiseTest(game) {
-
-}
+function NoiseTest() { }
 
 NoiseTest.prototype = {
     create: function() {
         var width = 500;
         var height = 500;
-        this.sprite = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, 'test');
-        this.sprite.anchor.setTo(0.5, 0.5);
-        this.sprite.bringToTop();
         this.cursors = this.game.input.keyboard.createCursorKeys();
-        var d = WorldGen.makeMap('ground', width, height, 'tilemap', 10, 10, 7);
-        d.setCallback(function(tilemap) {
-            //this.game.add.existing(tilemap);
-        }, this);
-
-        $('#reset').click(function(){
-            WorldGen.makeMap('ground', width, height, 'tilemap', 10, 10, 7);
+        this.world = new World({});
+        this.renderer = new Renderer(this.game, this.world, {
+           tileWidth: 10, tileHeight: 10, name: 'tileset'
         });
     },
 
     update: function() {
         if (this.cursors.left.justPressed()) {
             this.cursors.left.reset();
-            this.game.camera.x -= 10;
+            this.renderer.left();
         }
         else if (this.cursors.right.justPressed()) {
             this.cursors.right.reset();
-            this.game.camera.x += 10;
+            this.renderer.right();
         }
 
         if (this.cursors.up.justPressed()) {
             this.cursors.up.reset();
-            this.game.camera.y -= 10;
+            this.renderer.up();
         }
         else if (this.cursors.down.justPressed()) {
             this.cursors.down.reset();
-            this.game.camera.y += 10;
+            this.renderer.down();
         }
     }
 };
