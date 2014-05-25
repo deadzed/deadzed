@@ -1,14 +1,14 @@
-var WorldGen = require('../worldgen/worldgen');
-
-function World(settings) {
-    this.width = settings.width || 50;
-    this.height = settings.height || 50;
-    this.region_size = settings.region_height || 64;
-    this.regions = {};
-    this.gen = new WorldGen();
-}
+function World() { }
 
 World.prototype = {
+    init: function(settings) {
+        this.width = settings.width || 50;
+        this.height = settings.height || 50;
+        this.region_size = settings.region_height || 200;
+        this.regions = {};
+        this.gen = new WorldGen();
+    },
+
     forEach: function(x, y, width, height, callback, context) {
 		for (var iy = y + height; iy > 0; iy--) {
 			var row = [];
@@ -20,10 +20,10 @@ World.prototype = {
 
 	query: function (x, y, width, height) {
 		var view = [];
-		for (var iy = y + height; iy > 0; iy--) {
+		for (var iy = 0; iy < height; iy++) {
 			var row = [];
-			for (var ix = x; ix < x + width; ix++) {
-				row.push(this.at(ix, iy-1));
+			for (var ix = 0; ix < width; ix++) {
+				row.push(this.at(x + ix, y + iy));
 			}
 			view.push(row);
 		}
@@ -41,5 +41,3 @@ World.prototype = {
 		return region[y-iy*this.region_size][x-ix*this.region_size];
 	}
 };
-
-module.exports = World;

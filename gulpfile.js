@@ -21,17 +21,23 @@ gulp.task('html', function() {
 	.on('error', $.util.log);
 });
 
-gulp.task('scripts', function() {
+gulp.task('client', function() {
 	browserify('./src/scripts/zed.js')
 	.bundle()
-	.pipe(source('app.js'))
+	.pipe(source('client.js'))
 	.pipe(gulp.dest('public'))
 	.on('error', $.util.log);
 });
 
-gulp.task('worker', function() {
-	gulp.src('./src/worker/*.js')
-	.pipe($.concat('worker.js'))
+gulp.task('server', function() {
+	gulp.src([
+        'src/server/generators/*.js',
+        'src/server/region.js',
+        'src/server/worldgen.js',
+        'src/server/world.js',
+        'src/server/server.js'
+    ])
+	.pipe($.concat('server.js'))
 	.pipe(gulp.dest('public'))
 	.on('error', $.util.log);
 });
@@ -72,17 +78,17 @@ gulp.task('clean', function () {
 
 gulp.task('watch', function() {
 	gulp.watch('src/index.html', ['html']);
-	gulp.watch('src/scripts/**/*', ['scripts']);
+	gulp.watch('src/client/**/*', ['client']);
 	gulp.watch('src/styles/**/*', ['styles']);
 	gulp.watch('src/assets/**/*', ['assets']);
-	gulp.watch('src/worker/**/*', ['worker']);
+	gulp.watch('src/server/**/*', ['server']);
 	gulp.watch('public/*', function (e) {
 		gulp.src(e.path)
 		.pipe($.connect.reload());
 	});
 });
 
-gulp.task('build', ['html', 'scripts', 'worker', 'vendor', 'styles', 'assets']);
+gulp.task('build', ['html', 'client', 'server', 'vendor', 'styles', 'assets']);
 
 gulp.task('nodewebkit', ['build', 'grunt-nodewebkit']);
 

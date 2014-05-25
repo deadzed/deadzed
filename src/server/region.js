@@ -15,8 +15,3 @@ function Region(type, x, y, size) {
 Region.prototype ={
 
 };
-
-module.exports = {
-    REGION_TYPES: REGION_TYPES,
-    Region: Region
-};

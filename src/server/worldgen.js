@@ -1,12 +1,11 @@
-generators = require("./generators/base");
-region = require("./region");
-
-function WorldGen() { }
+function WorldGen() {
+    this.basicGen = new BasicGenerator();
+}
 
 WorldGen.prototype = {
 
     generatePoint: function(x, y) {
-        return generators.BasicGenerator.setInfo(x, y, {x: x, y: y});
+        return this.basicGen.setInfo(x, y, {x: x, y: y});
     },
 
     generateRegion: function(x, y, size) {
@@ -23,5 +22,3 @@ WorldGen.prototype = {
         return map;
     }
 };
-
-module.exports = WorldGen;

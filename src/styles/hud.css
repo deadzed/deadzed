@@ -56,3 +56,7 @@ body {
     left: 0;
     right: 0;
 }
+
+#hud img {
+    width: 100%;
+}

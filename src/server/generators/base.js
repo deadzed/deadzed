@@ -1,3 +1,5 @@
+importScripts('noisejs/index.js')
+
 function Generator() {
     this.noise = new Noise(Math.random());
 }
@@ -28,7 +30,3 @@ BasicGenerator.prototype = {
         return info;
     }
 };
-
-module.exports = {
-    BasicGenerator: new BasicGenerator()
-}

@@ -1,15 +1,12 @@
-var World = require('../services/world/world');
+var Client = require('../client');
 var Renderer = require('../renderer');
 
 function NoiseTest() { }
 
 NoiseTest.prototype = {
     create: function() {
-        var width = 500;
-        var height = 500;
         this.cursors = this.game.input.keyboard.createCursorKeys();
-        this.world = new World({});
-        this.renderer = new Renderer(this.game, this.world, {
+        this.renderer = new Renderer(this.game, {
            tileWidth: 10, tileHeight: 10, name: 'tileset'
         });
     },

@@ -1,7 +1,8 @@
-function Renderer(game, world, tileSet) {
+var Client = require('./client');
+
+function Renderer(game, tileSet) {
     this.dirty = false;
     this.game = game;
-    this.world = world;
     this.tileSet = tileSet;
     this.width = Math.floor(game.width / tileSet.tileWidth);
     this.height = Math.floor(game.height / tileSet.tileHeight);
@@ -23,7 +24,9 @@ function Renderer(game, world, tileSet) {
         this.width, this.height,
         tileSet.tileWidth, tileSet.tileWidth
     );
-    this.drawTiles();
+    Client.msg('init', {}).setCallback(function(result) {
+       this.drawTiles();
+    }, this);
 }
 
 Renderer.prototype = {
@@ -39,15 +42,22 @@ Renderer.prototype = {
     right: function(amount) { this.move(amount || 1, 0); },
 
     drawTiles: function() {
-        for (var x=0; x<this.width; x++) {
+        var callback = function(data) {
             for (var y=0; y<this.height; y++) {
-                var ox = this.x - this.halfWidth;
-                var oy = this.y - this.halfHeight;
-                var data = this.world.at(x + ox, y + oy);
-                this.putTile(this.tileMap, data.index, x, y);
+                for (var x=0; x<this.width; x++) {
+                    var info = data[y][x];
+                    this.putTile(this.tileMap, info.index, x, y);
+                }
             }
-        }
-        this.tileLayer.dirty = true;
+            this.tileLayer.dirty = true;
+        };
+
+        d = Client.msg(
+            'query',
+            this.x - this.halfWidth, this.y - this.halfHeight,
+            this.width, this.height
+        );
+        d.setCallback(callback, this);
     },
 
     putTile: function (map, tile, x, y) {
