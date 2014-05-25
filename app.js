@@ -1,4 +1,224 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+function Renderer(game, world, tileSet) {
+    this.dirty = false;
+    this.game = game;
+    this.world = world;
+    this.tileSet = tileSet;
+    this.width = Math.floor(game.width / tileSet.tileWidth);
+    this.height = Math.floor(game.height / tileSet.tileHeight);
+    this.halfWidth = Math.floor(this.width / 2);
+    this.halfHeight = Math.floor(this.height / 2);
+    this.x = this.halfWidth;
+    this.y = this.halfHeight;
+    this.tileMap = new Phaser.Tilemap(
+        game, null,
+        tileSet.tileWidth, tileSet.tileHeight,
+        this.width, this.height
+    );
+    this.tileMap.addTilesetImage(
+        'terrain', tileSet.name,
+        tileSet.tileWidth, tileSet.tileHeight
+    );
+    this.tileLayer = this.tileMap.create(
+        'main',
+        this.width, this.height,
+        tileSet.tileWidth, tileSet.tileWidth
+    );
+    this.drawTiles();
+}
+
+Renderer.prototype = {
+    move: function(dx, dy) {
+        this.x += dx;
+        this.y += dy;
+        this.drawTiles();
+    },
+
+    up: function(amount) { this.move(0, -amount || -1); },
+    down: function(amount) { this.move(0, amount || 1); },
+    left: function(amount) { this.move(-amount || -1, 0); },
+    right: function(amount) { this.move(amount || 1, 0); },
+
+    drawTiles: function() {
+        for (var x=0; x<this.width; x++) {
+            for (var y=0; y<this.height; y++) {
+                var ox = this.x - this.halfWidth;
+                var oy = this.y - this.halfHeight;
+                var data = this.world.at(x + ox, y + oy);
+                this.putTile(this.tileMap, data.index, x, y);
+            }
+        }
+        this.tileLayer.dirty = true;
+    },
+
+    putTile: function (map, tile, x, y) {
+
+        var layer_idx = map.getLayer(map.currentLayer);
+        var layer = map.layers[layer_idx];
+
+        if (x >= 0 && x < layer.width && y >= 0 && y < layer.height) {
+            var index;
+
+            if (tile instanceof Phaser.Tile) {
+                index = tile.index;
+
+                if (this.hasTile(x, y, layer)) {
+                    this.layers[layer].data[y][x].copy(tile);
+                } else {
+                    this.layers[layer].data[y][x] = new Phaser.Tile(layer, index, x, y, tile.width, tile.height);
+                }
+            } else {
+                index = tile;
+
+                if (map.hasTile(x, y, layer_idx)) {
+                    layer.data[y][x].index = index;
+                } else {
+                    layer.data[y][x] = new Phaser.Tile(layer, index, x, y, map.tileWidth, map.tileHeight);
+                }
+            }
+        }
+    }
+};
+
+module.exports = Renderer;
+
+},{}],2:[function(require,module,exports){
+var WorldGen = require('../worldgen/worldgen');
+
+function World(settings) {
+    this.width = settings.width || 50;
+    this.height = settings.height || 50;
+    this.region_size = settings.region_height || 64;
+    this.regions = {};
+    this.gen = new WorldGen();
+}
+
+World.prototype = {
+    forEach: function(x, y, width, height, callback, context) {
+		for (var iy = y + height; iy > 0; iy--) {
+			var row = [];
+			for (var ix = x; ix < x + width; ix++) {
+				callback.apply(context, ix, iy, this.at(ix, iy-1));
+			}
+		}
+    },
+
+	query: function (x, y, width, height) {
+		var view = [];
+		for (var iy = y + height; iy > 0; iy--) {
+			var row = [];
+			for (var ix = x; ix < x + width; ix++) {
+				row.push(this.at(ix, iy-1));
+			}
+			view.push(row);
+		}
+		return view;
+	},
+
+	at: function (x, y) {
+		var ix = Math.floor(x / this.region_size);
+		var iy = Math.floor(y / this.region_size);
+		var region = this.regions[[ix, iy]];
+        if (region === undefined) {
+            region = this.gen.generateRegion(ix, iy, this.region_size);
+            this.regions[[ix, iy]] = region;
+        }
+		return region[y-iy*this.region_size][x-ix*this.region_size];
+	}
+};
+
+module.exports = World;
+
+},{"../worldgen/worldgen":5}],3:[function(require,module,exports){
+function Generator() {
+    this.noise = new Noise(Math.random());
+}
+
+Generator.prototype = {
+    xScale: 100,
+    yScale: 100,
+    getAt: function(x, y) {
+        var val = this.noise.simplex2(x / this.xScale, y / this.yScale);
+        return val;
+    },
+    setInfo: function(x, y, info) { }
+};
+
+
+function BasicGenerator() {
+    Generator.apply(this);
+}
+
+BasicGenerator.prototype = {
+    __proto__: Generator.prototype,
+    threshold: 0.0,
+
+    setInfo: function(x, y, info) {
+        var val = this.getAt(x, y);
+        info.index = Math.floor(8 * Math.abs(1 + this.getAt(x, y)));
+        console.log(info.index);
+        return info;
+    }
+};
+
+module.exports = {
+    BasicGenerator: new BasicGenerator()
+}
+
+},{}],4:[function(require,module,exports){
+
+var REGION_TYPES = {
+    'wilderness': {
+        icon: 'w'
+    }
+}
+
+function Region(type, x, y, size) {
+    this.type = type || 'wilderness';
+    this.x = x || 0;
+    this.y = y || 0;
+    this.size = size;
+}
+
+Region.prototype ={
+
+};
+
+module.exports = {
+    REGION_TYPES: REGION_TYPES,
+    Region: Region
+};
+
+},{}],5:[function(require,module,exports){
+generators = require("./generators/base");
+region = require("./region");
+
+function WorldGen() { }
+
+WorldGen.prototype = {
+
+    generatePoint: function(x, y) {
+        return generators.BasicGenerator.setInfo(x, y, {x: x, y: y});
+    },
+
+    generateRegion: function(x, y, size) {
+        var map = [];
+        var yoff = y * size;
+        var xoff = x * size;
+        for(var m=yoff; m<yoff+ size; m++) {
+            var row = [];
+            for(var n=xoff; n<xoff + size; n++) {
+                row.push(this.generatePoint(n, m));
+            }
+            map.push(row);
+        }
+        return map;
+    }
+};
+
+module.exports = WorldGen;
+
+},{"./generators/base":3,"./region":4}],6:[function(require,module,exports){
 'use strict';
 
 function Boot() { }
@@ -16,58 +236,48 @@ Boot.prototype = {
 
 module.exports = Boot;
 
-},{}],2:[function(require,module,exports){
-var WorldGen = require('../worldgen/client');
+},{}],7:[function(require,module,exports){
+var World = require('../services/world/world');
+var Renderer = require('../renderer');
 
-function NoiseTest(game) {
-
-}
+function NoiseTest() { }
 
 NoiseTest.prototype = {
     create: function() {
         var width = 500;
         var height = 500;
-        this.sprite = this.game.add.sprite(this.game.world.centerX, this.game.world.centerY, 'test');
-        this.sprite.anchor.setTo(0.5, 0.5);
-        this.sprite.bringToTop();
         this.cursors = this.game.input.keyboard.createCursorKeys();
-        var d = WorldGen.makeMap('ground', width, height, 'tilemap', 10, 10, 7);
-        d.setCallback(function(tilemap) {
-            //this.game.add.existing(tilemap);
-        }, this);
-
-        $('#reset').click(function(){
-            WorldGen.makeMap('ground', width, height, 'tilemap', 10, 10, 7);
+        this.world = new World({});
+        this.renderer = new Renderer(this.game, this.world, {
+           tileWidth: 10, tileHeight: 10, name: 'tileset'
         });
     },
 
     update: function() {
         if (this.cursors.left.justPressed()) {
             this.cursors.left.reset();
-            this.game.camera.x -= 10;
+            this.renderer.left();
         }
         else if (this.cursors.right.justPressed()) {
             this.cursors.right.reset();
-            this.game.camera.x += 10;
+            this.renderer.right();
         }
 
         if (this.cursors.up.justPressed()) {
             this.cursors.up.reset();
-            this.game.camera.y -= 10;
+            this.renderer.up();
         }
         else if (this.cursors.down.justPressed()) {
             this.cursors.down.reset();
-            this.game.camera.y += 10;
+            this.renderer.down();
         }
     }
 };
 
 module.exports = NoiseTest;
 
-},{"../worldgen/client":5}],3:[function(require,module,exports){
+},{"../renderer":1,"../services/world/world":2}],8:[function(require,module,exports){
 'use strict';
-
-var WorldGen = require("../worldgen/client");
 
 function Preload() {
     this.asset = null;
@@ -88,7 +298,6 @@ Preload.prototype = {
 
     create: function() {
         this.asset.cropEnabled = false;
-        WorldGen.init(this.game);
     },
 
     update: function() {
@@ -104,7 +313,7 @@ Preload.prototype = {
 
 module.exports = Preload;
 
-},{"../worldgen/client":5}],4:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var getCharacterWidth = function(c, size) {
     var $shiv = $('<span style="font-family: monospace; margin:0px; padding:0px; font-size: '+ size + 'px;">' + c + '</span>');
     $(document.documentElement).append($shiv);
@@ -147,157 +356,7 @@ module.exports = {
     ZedUI: ZedUI
 };
 
-},{}],5:[function(require,module,exports){
-region = require("./region");
-
-function Deferred() {
-    this.callback = null;
-    this.context = null;
-}
-
-Deferred.prototype = {
-    setCallback: function(cb, ctx) {
-        this.callback = cb;
-        this.context = ctx;
-    },
-    fire: function() {
-        if (this.callback) {
-            this.callback.apply(this.context, arguments);
-        }
-    }
-};
-
-function WorldGen() { }
-
-WorldGen.prototype = {
-
-    init: function(game) {
-        this.game = game;
-        this.maps = {};
-    },
-
-    _callto: (function () {
-
-        var data = {
-            nextID: 1,
-            listeners: {}
-        };
-
-        oParser = new Worker("worker.js");
-
-        oParser.onmessage = function (oEvent) {
-            if (data.listeners[oEvent.data.id]) {
-                var callback = data.listeners[oEvent.data.id];
-                callback.fire(oEvent.data.evaluated);
-            }
-            delete data.listeners[oEvent.data.id];
-        };
-
-        return function () {
-            var d = new Deferred();
-            data.listeners[data.nextID] = d;
-            var args = [];
-            for (var i=1; i<arguments.length; i++) {
-                args.push(arguments[i]);
-            }
-            oParser.postMessage({
-                "id": data.nextID,
-                "message": arguments[0],
-                "args": args
-            });
-            data.nextID += 1;
-            return d;
-        };
-    })(),
-
-    makeMap: function(name, width, height, tilemap, twidth, theight, ntiles) {
-        d = new Deferred();
-        this._callto("generateMap", width, height, ntiles).setCallback(function(map) {
-            var tilemap = new Phaser.Tilemap(this.game, null, twidth, theight, width, height);
-            tilemap.addTilesetImage('ground', 'tileset', 10, 10);
-            ground_layer = tilemap.create(name, width, height, twidth, theight);
-            ground_layer.resizeWorld();
-            for(var i=0; i<map.length; i++) {
-                var tile = map[i];
-                this.putTile(tilemap, tile.tile, tile.x, tile.y);
-            }
-            tilemap.layers[tilemap.currentLayer].dirty = true;
-            tilemap.calculateFaces(tilemap.currentLayer);
-            d.fire(tilemap);
-        }, this);
-        return d;
-    },
-
-    putTile: function (map, tile, x, y) {
-
-        var layer_idx = map.getLayer(map.currentLayer);
-        var layer = map.layers[layer_idx];
-
-        if (x >= 0 && x < layer.width && y >= 0 && y < layer.height)
-        {
-            var index;
-
-            if (tile instanceof Phaser.Tile)
-            {
-                index = tile.index;
-
-                if (this.hasTile(x, y, layer))
-                {
-                    this.layers[layer].data[y][x].copy(tile);
-                }
-                else
-                {
-                    this.layers[layer].data[y][x] = new Phaser.Tile(layer, index, x, y, tile.width, tile.height);
-                }
-            }
-            else
-            {
-                index = tile;
-
-                if (map.hasTile(x, y, layer_idx))
-                {
-                    layer.data[y][x].index = index;
-                }
-                else
-                {
-                    layer.data[y][x] = new Phaser.Tile(layer, index, x, y, map.tileWidth, map.tileHeight);
-                }
-            }
-
-        }
-    }
-
-
-
-};
-
-module.exports = new WorldGen();
-
-},{"./region":6}],6:[function(require,module,exports){
-
-var REGION_TYPES = {
-    'wilderness': {
-        icon: 'w'
-    }
-}
-
-function Region(type, x, y, size) {
-    this.type = type || 'wilderness';
-    this.x = x || 0;
-    this.y = y || 0;
-    this.size = size;
-}
-
-Region.prototype ={
-
-};
-
-module.exports = {
-    REGION_TYPES: REGION_TYPES,
-    Region: Region
-};
-
-},{}],7:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 mUI = require('./ui');
 sBoot = require('./states/boot');
 sPreloader = require('./states/preloader');
@@ -308,7 +367,6 @@ var ZED = {
     UI: null,
     Game: null
 };
-
 
 $(document).ready(function(){
     ZED.UI = mUI.ZedUI({fontSize: 16});
@@ -341,4 +399,4 @@ $(document).ready(function(){
 
 });
 
-},{"./states/boot":1,"./states/noise":2,"./states/preloader":3,"./ui":4}]},{},[7])
+},{"./states/boot":6,"./states/noise":7,"./states/preloader":8,"./ui":9}]},{},[10])
